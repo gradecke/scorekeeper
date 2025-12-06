@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Card Game Scorekeeper</title>
+
+<style>
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        padding: 16px;
+        background: #f2f2f7;
+        color: #222;
+        max-width: 600px;
+        margin: auto;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    .card {
+        background: white;
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    input[type="text"] {
+        width: 100%;
+        padding: 12px;
+        margin-top: 8px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        font-size: 16px;
+    }
+
+    button {
+        width: 100%;
+        padding: 14px;
+        margin-top: 12px;
+        border: none;
+        border-radius: 10px;
+        font-size: 18px;
+        font-weight: bold;
+        background: #007aff;
+        color: white;
+    }
+
+    button.secondary {
+        background: #5856d6;
+    }
+
+    button.danger {
+        background: #ff3b30;
+    }
+
+    .player-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        gap: 10px;
+    }
+
+    .player-row input {
+        flex: 1;
+    }
+
+    .score-entry {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .score-entry span {
+        flex: 1;
+        font-size: 16px;
+    }
+
+    .scores-list {
+        margin-top: 12px;
+    }
+
+    .scores-list div {
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+        font-size: 18px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .sort-buttons {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .sort-buttons button {
+        flex: 1;
+        padding: 10px;
+        font-size: 15px;
+        background: #d1d1d6;
+        color: black;
+    }
+</style>
+
+</head>
+<body>
+
+<h1>Scorekeeper</h1>
+
+<!-- Player Setup -->
+<div id="setup" class="card">
+    <h2>Players</h2>
+    <div id="playerInputs"></div>
+    <button onclick="addPlayerInput()">Add Player</button>
+    <button class="secondary" onclick="startGame()">Start Game</button>
+</div>
+
+<!-- Game Panel -->
+<div id="game" class="card" style="display:none;">
+    <h2>Enter Points</h2>
+    <div id="pointInputs"></div>
+    <button onclick="submitPoints()">Add Points</button>
+
+    <h2>Scores</h2>
+
+    <div class="sort-buttons">
+        <button onclick="setSort('score-desc')">Score ↓</button>
+        <button onclick="setSort('score-asc')">Score ↑</button>
+        <button onclick="setSort('name-asc')">Name A–Z</button>
+        <button onclick="setSort('name-desc')">Name Z–A</button>
+    </div>
+
+    <div id="scoreBoard" class="scores-list"></div>
+
+    <button class="secondary" onclick="newGameSamePlayers()">New Game (Same Players)</button>
+    <button class="danger" onclick="resetAll()">Reset (New Players)</button>
+</div>
+
+<script>
+let players = [];
+let scores = {};
+let sortMode = "score-desc"; // default
+
+function addPlayerInput() {
+    const container = document.getElementById("playerInputs");
+    const div = document.createElement("div");
+    div.className = "player-row";
+
+    div.innerHTML = `
+        <input type="text" placeholder="Player name" class="player-name">
+    `;
+    container.appendChild(div);
+}
+
+addPlayerInput();
+addPlayerInput();
+
+function startGame() {
+    const inputs = document.querySelectorAll(".player-name");
+    players = [];
+    scores = {};
+
+    inputs.forEach(input => {
+        const name = input.value.trim();
+        if (name) {
+            players.push(name);
+            scores[name] = 0;
+        }
+    });
+
+    if (players.length === 0) {
+        alert("Add at least one player.");
+        return;
+    }
+
+    document.getElementById("setup").style.display = "none";
+    document.getElementById("game").style.display = "block";
+
+    renderPointInputs();
+    updateScoreBoard();
+    saveState();
+}
+
+function renderPointInputs() {
+    const container = document.getElementById("pointInputs");
+    container.innerHTML = "";
+
+    players.forEach(p => {
+        const row = document.createElement("div");
+        row.className = "score-entry";
+
+        row.innerHTML = `
+            <span>${p}</span>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="points-${p}" placeholder="0" />
+        `;
+
+        container.appendChild(row);
+    });
+}
+
+function submitPoints() {
+    players.forEach(p => {
+        const raw = document.getElementById(`points-${p}`).value.trim();
+        const val = raw === "" ? NaN : parseInt(raw);
+        if (!isNaN(val)) {
+            scores[p] += val;
+        }
+        document.getElementById(`points-${p}`).value = "";
+    });
+
+    updateScoreBoard();
+    saveState();
+}
+
+function sortScores() {
+    return players.slice().sort((a, b) => {
+        if (sortMode === "score-desc") return scores[b] - scores[a];
+        if (sortMode === "score-asc")  return scores[a] - scores[b];
+        if (sortMode === "name-asc")   return a.localeCompare(b);
+        if (sortMode === "name-desc")  return b.localeCompare(a);
+        return 0;
+    });
+}
+
+function setSort(mode) {
+    sortMode = mode;
+    updateScoreBoard();
+    saveState();
+}
+
+function updateScoreBoard() {
+    const board = document.getElementById("scoreBoard");
+    board.innerHTML = "";
+
+    const sorted = sortScores();
+
+    sorted.forEach(p => {
+        const row = document.createElement("div");
+        row.innerHTML = `<strong>${p}</strong> <span>${scores[p]}</span>`;
+        board.appendChild(row);
+    });
+}
+
+function newGameSamePlayers() {
+    players.forEach(p => scores[p] = 0);
+    updateScoreBoard();
+    saveState();
+}
+
+function resetAll() {
+    players = [];
+    scores = {};
+    localStorage.removeItem("scorekeeper_state");
+
+    document.getElementById("playerInputs").innerHTML = "";
+    addPlayerInput();
+    addPlayerInput();
+
+    document.getElementById("game").style.display = "none";
+    document.getElementById("setup").style.display = "block";
+}
+
+function saveState() {
+    const state = {
+        players,
+        scores,
+        sortMode
+    };
+    localStorage.setItem("scorekeeper_state", JSON.stringify(state));
+}
+
+function loadState() {
+    const raw = localStorage.getItem("scorekeeper_state");
+    if (!raw) return false;
+
+    try {
+        const state = JSON.parse(raw);
+        if (!state.players || !state.scores) return false;
+
+        players = state.players;
+        scores = state.scores;
+        sortMode = state.sortMode || "score-desc";
+
+        return true;
+    } catch(e) {
+        return false;
+    }
+}
+
+window.onload = () => {
+    if (loadState()) {
+        document.getElementById("setup").style.display = "none";
+        document.getElementById("game").style.display = "block";
+        renderPointInputs();
+        updateScoreBoard();
+    }
+};
+</script>
+
+</body>
+</html>
