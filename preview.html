@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Card Game Scorekeeper</title>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    :root {
+        --bg: #f2f2f7;
+        --card-bg: #ffffff;
+        --text: #222;
+        --border: #ccc;
+        --button-bg: #007aff;
+        --secondary-bg: #5856d6;
+        --danger-bg: #ff3b30;
+    }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg: #000000;
+            --card-bg: #1c1c1e;
+            --text: #f2f2f7;
+            --border: #444;
+            --button-bg: #0a84ff;
+            --secondary-bg: #5e5ce6;
+            --danger-bg: #ff453a;
+        }
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        padding: 16px;
+        background: var(--bg);
+        color: var(--text);
+        max-width: 750px;
+        margin: auto;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    .card {
+        background: var(--card-bg);
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    button {
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: bold;
+        color: white;
+        background: var(--button-bg);
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    .player-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .player-table th, .player-table td {
+        padding: 10px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .player-table th {
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .numeric-input {
+        width: 70px;
+        padding: 6px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--card-bg);
+        color: var(--text);
+        font-size: 16px;
+        text-align: center;
+    }
+
+    input.player-name {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--card-bg);
+        color: var(--text);
+    }
+
+    .color-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    }
+
+    /* Actions dropdown */
+    .actions-container {
+        text-align: right;
+        margin-bottom: 10px;
+    }
+
+    .actions-menu {
+        display: none;
+        position: absolute;
+        right: 10px;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px;
+        z-index: 10;
+        width: 200px;
+    }
+
+    .actions-menu button {
+        background: none;
+        width: 100%;
+        margin: 0;
+        padding: 10px;
+        color: var(--text);
+        text-align: left;
+        border-radius: 6px;
+    }
+
+    .actions-menu button:hover {
+        background: var(--border);
+    }
+</style>
+
+</head>
+<body>
+
+<h1>Scorekeeper</h1>
+
+<!-- Actions menu -->
+<div class="actions-container">
+    <button onclick="toggleActions()">Actions ▾</button>
+    <div id="actionsMenu" class="actions-menu">
+        <button onclick="confirmNewGame()">New Game (Same Players)</button>
+        <button onclick="confirmReset()">Reset (New Players)</button>
+    </div>
+</div>
+
+<!-- Player Setup -->
+<div id="setup" class="card">
+    <h2>Players</h2>
+    <div id="playerInputs"></div>
+    <button onclick="addPlayerInput()">Add Player</button>
+    <button onclick="startGame()">Start Game</button>
+</div>
+
+<!-- Game Panel -->
+<div id="game" class="card" style="display:none;">
+
+    <h2>Enter Points</h2>
+
+    <table class="player-table">
+        <thead>
+            <tr>
+                <th onclick="toggleSort('name')">Name <span id="sortNameIcon">↕</span></th>
+                <th>Points</th>
+                <th onclick="toggleSort('score')">Total <span id="sortScoreIcon">↓</span></th>
+            </tr>
+        </thead>
+        <tbody id="playerRows"></tbody>
+    </table>
+
+    <button onclick="submitPoints()">Add Points</button>
+
+    <h2>Score History</h2>
+    <canvas id="scoreChart" height="200"></canvas>
+</div>
+
+<script>
+/* --------------------------------------
+   DATA
+-------------------------------------- */
+let players = [];
+let scores = {};
+let history = [];  // array of score snapshots per round
+let sortMode = "score-desc";
+
+const COLORS = [
+    "#007AFF", // blue
+    "#FF3B30", // red
+    "#34C759", // green
+    "#AF52DE", // purple
+    "#FF9500", // orange
+    "#5AC8FA"  // light blue
+];
+
+/* --------------------------------------
+   INITIAL PLAYER INPUT
+-------------------------------------- */
+function addPlayerInput() {
+    const container = document.getElementById("playerInputs");
+    const div = document.createElement("div");
+    div.style.marginBottom = "10px";
+    div.innerHTML = `<input type="text" class="player-name" placeholder="Player name">`;
+    container.appendChild(div);
+}
+addPlayerInput();
+addPlayerInput();
+
+/* --------------------------------------
+   ACTIONS MENU
+-------------------------------------- */
+function toggleActions() {
+    const m = document.getElementById("actionsMenu");
+    m.style.display = m.style.display === "block" ? "none" : "block";
+}
+document.body.addEventListener("click", e => {
+    if (!e.target.closest(".actions-container")) {
+        document.getElementById("actionsMenu").style.display = "none";
+    }
+});
+
+/* --------------------------------------
+   START GAME
+-------------------------------------- */
+function startGame() {
+    const inputs = document.querySelectorAll(".player-name");
+    players = [];
+    scores = {};
+    history = [];
+
+    inputs.forEach((inp, i) => {
+        const n = inp.value.trim();
+        if (n) {
+            players.push(n);
+            scores[n] = 0;
+        }
+    });
+
+    if (players.length === 0) {
+        alert("Add at least one player.");
+        return;
+    }
+
+    document.getElementById("setup").style.display = "none";
+    document.getElementById("game").style.display = "block";
+
+    renderPlayerRows();
+    updateAll();
+    saveState();
+}
+
+/* --------------------------------------
+   RENDER TABLE ROWS
+-------------------------------------- */
+function renderPlayerRows() {
+    const tbody = document.getElementById("playerRows");
+    tbody.innerHTML = "";
+
+    const sorted = sortPlayers();
+
+    sorted.forEach((p, idx) => {
+        const color = COLORS[idx % COLORS.length];
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td><span class="color-dot" style="background:${color}"></span>${p}</td>
+            <td><input type="text" inputmode="numeric" pattern="[0-9]*" class="numeric-input" id="points-${p}" placeholder="0"></td>
+            <td id="total-${p}">${scores[p]}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+/* --------------------------------------
+   SORTING
+-------------------------------------- */
+function toggleSort(col) {
+    if (col === "name") {
+        sortMode = sortMode === "name-asc" ? "name-desc" : "name-asc";
+    } else if (col === "score") {
+        sortMode = sortMode === "score-desc" ? "score-asc" : "score-desc";
+    }
+    updateAll();
+    saveState();
+}
+
+function sortPlayers() {
+    return players.slice().sort((a, b) => {
+        if (sortMode === "name-asc") return a.localeCompare(b);
+        if (sortMode === "name-desc") return b.localeCompare(a);
+        if (sortMode === "score-asc") return scores[a] - scores[b];
+        return scores[b] - scores[a]; // score-desc default
+    });
+}
+
+/* --------------------------------------
+   ADD POINTS
+-------------------------------------- */
+function submitPoints() {
+    players.forEach(p => {
+        const raw = document.getElementById(`points-${p}`).value.trim();
+        if (raw !== "" && !isNaN(parseInt(raw))) {
+            scores[p] += parseInt(raw);
+        }
+        document.getElementById(`points-${p}`).value = "";
+    });
+
+    recordHistory();
+    updateAll();
+    saveState();
+}
+
+/* --------------------------------------
+   HISTORY + CHART
+-------------------------------------- */
+function recordHistory() {
+    const snapshot = players.map(p => scores[p]);
+    history.push(snapshot);
+}
+
+let chart;
+
+function updateChart() {
+    const ctx = document.getElementById("scoreChart").getContext("2d");
+
+    const labels = history.map((_, i) => `Round ${i+1}`);
+
+    const datasets = players.map((p, idx) => {
+        const color = COLORS[idx % COLORS.length];
+        const playerData = history.map(h => {
+            const playerIndex = players.indexOf(p);
+            return h[playerIndex];
+        });
+
+        return {
+            label: p,
+            data: playerData,
+            borderColor: color,
+            backgroundColor: color + "33",
+            borderWidth: 3,
+            tension: 0.2
+        };
+    });
+
+    if (chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+        type: "line",
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: "var(--text)" } } },
+            scales: {
+                x: { ticks: { color: "var(--text)" } },
+                y: { ticks: { color: "var(--text)" } }
+            }
+        }
+    });
+}
+
+/* --------------------------------------
+   UPDATE TABLE, CHART, UI
+-------------------------------------- */
+function updateTotals() {
+    players.forEach(p => {
+        document.getElementById(`total-${p}`).innerText = scores[p];
+    });
+}
+
+function updateAll() {
+    renderPlayerRows();
+    updateTotals();
+    if (history.length > 0) updateChart();
+}
+
+/* --------------------------------------
+   NEW GAME / RESET
+-------------------------------------- */
+function confirmNewGame() {
+    if (confirm("Start a new game with the same players?")) {
+        players.forEach(p => scores[p] = 0);
+        history = [];
+        updateAll();
+        saveState();
+    }
+}
+
+function confirmReset() {
+    if (confirm("Reset everything and start with new players?")) {
+        localStorage.removeItem("scorekeeper_state");
+        location.reload();
+    }
+}
+
+/* --------------------------------------
+   STORAGE
+-------------------------------------- */
+function saveState() {
+    const state = { players, scores, history, sortMode };
+    localStorage.setItem("scorekeeper_state", JSON.stringify(state));
+}
+
+function loadState() {
+    const raw = localStorage.getItem("scorekeeper_state");
+    if (!raw) return false;
+
+    try {
+        const state = JSON.parse(raw);
+        players = state.players;
+        scores = state.scores;
+        history = state.history;
+        sortMode = state.sortMode;
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+window.onload = () => {
+    if (loadState()) {
+        document.getElementById("setup").style.display = "none";
+        document.getElementById("game").style.display = "block";
+        renderPlayerRows();
+        updateAll();
+    }
+};
+</script>
+
+</body>
+</html>
