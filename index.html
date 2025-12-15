@@ -42,7 +42,7 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
       margin: 0;
-      padding: 16px;
+      padding: 12px;
       background: var(--bg);
       color: var(--text);
       max-width: 820px;
@@ -53,49 +53,43 @@
     }
 
     h1 {
-      text-align: center;
-      margin: 6px 0 14px;
-      font-size: 20px;
+      display: none;
     }
 
     .card {
       background: var(--card);
       border-radius: 12px;
-      padding: 12px;
+      padding: 10px;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-      margin-bottom: 14px;
+      margin-bottom: 10px;
       border: 1px solid rgba(0, 0, 0, 0.02);
     }
 
     /* Top bar */
     .topbar {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      align-items: center;
-      margin-bottom: 8px;
+      display: none;
     }
 
     .btn {
       background: var(--primary);
       color: white;
-      padding: 10px 12px;
+      padding: 8px 10px;
       border-radius: 10px;
       border: none;
       font-weight: 600;
-      font-size: 15px;
+      font-size: 14px;
     }
 
     .icon-btn {
       background: var(--card);
       color: var(--text);
       border: 1px solid var(--border);
-      padding: 8px 10px;
+      padding: 6px 8px;
       border-radius: 10px;
       font-size: 16px;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .actions-container {
@@ -208,16 +202,17 @@
 
     .table th,
     .table td {
-      padding: 10px 8px;
+      padding: 8px 6px;
       border-bottom: 1px solid var(--border);
       vertical-align: middle;
     }
 
     .table th {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       text-align: left;
       cursor: default;
+      white-space: nowrap;
     }
 
     .table th.col-input,
@@ -226,22 +221,22 @@
     }
 
     .col-name {
-      width: 55%;
+      width: 50%;
     }
 
     .col-input {
-      width: 25%;
+      width: 28%;
       text-align: center;
     }
 
     .col-total {
-      width: 20%;
+      width: 22%;
       text-align: center;
     }
 
     .numeric-input {
-      width: 84px;
-      padding: 8px;
+      width: 70px;
+      padding: 7px;
       border-radius: 8px;
       border: 1px solid var(--border);
       font-size: 15px;
@@ -260,20 +255,21 @@
     }
 
     .sort-icon {
-      margin-left: 8px;
+      margin-left: 4px;
       font-weight: 800;
       color: var(--muted);
       font-size: 14px;
       cursor: pointer;
       user-select: none;
+      display: inline-block;
     }
 
     /* Chart container */
     .chart-wrap {
-      height: 40vh;
-      max-height: 50vh;
-      min-height: 180px;
-      margin-top: 12px;
+      height: 35vh;
+      max-height: 40vh;
+      min-height: 160px;
+      margin-top: 10px;
       overflow: hidden;
       position: relative;
     }
@@ -423,7 +419,6 @@
     </div>
 
     <div class="actions-container">
-      <!-- stop event propagation so global click handler doesn't immediately close the menu -->
       <button class="icon-btn" onclick="toggleActions(event)">Actions ▾</button>
       <div id="actionsMenu" class="actions-menu" style="display:none;">
         <button onclick="confirmNewGame()">New Game (Same Players)</button>
@@ -443,48 +438,62 @@
       <button class="btn" style="flex:1" onclick="addPlayerInput()">Add Player</button>
       <button class="btn" style="flex:1;" onclick="startGame()">Start Game</button>
     </div>
-    <div class="muted">Tip: Add player names, then press Start Game. Add at least one player.</div>
+    <div class="muted" style="font-size:12px; margin-top:6px;">Tip: Add player names, then press Start Game. Add at
+      least one player.</div>
   </div>
 
   <!-- Game -->
   <div id="game" class="card" style="display:none;">
-    <!-- Global target control at top -->
+    <!-- Global target control at top with buttons -->
     <div
-      style="margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-      <label style="display:flex; align-items:center; gap:8px; font-size:14px; color:var(--muted);">
-        Global target
-        <label class="toggle-slider">
-          <input type="checkbox" id="globalTargetCheck" onchange="toggleGlobalTarget()">
-          <span class="slider"></span>
+      style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+      <div
+        style="display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.03); padding:4px 8px; border-radius:8px;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted);">
+          Global target
+          <label class="toggle-slider">
+            <input type="checkbox" id="globalTargetCheck" onchange="toggleGlobalTarget()">
+            <span class="slider"></span>
+          </label>
         </label>
-      </label>
-      <input id="globalTargetInput" class="numeric-input" placeholder="Target" style="width:100px; display:none;"
-        type="number" min="0" />
+        <input id="globalTargetInput" class="numeric-input" placeholder="Global target"
+          style="width:90px; display:none;" type="number" min="0" />
+      </div>
+
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button class="icon-btn" title="Save / Load Configurations" onclick="openConfigDialog()">💾</button>
+        <div class="actions-container">
+          <button class="icon-btn" onclick="toggleActions(event)">🔧</button>
+          <div id="actionsMenu" class="actions-menu" style="display:none;">
+            <button onclick="confirmNewGame()">New Game (Same Players)</button>
+            <button onclick="confirmReset()">Reset (New Players)</button>
+            <button onclick="openEditRounds()">Edit Previous Rounds</button>
+            <button onclick="exportGame()">Export Game</button>
+            <button onclick="importGame()">Import Game</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <table class="table" role="table" aria-label="Players table">
       <thead>
         <tr>
-          <th class="col-name">Name
-            <span id="nameSort" class="sort-icon" onclick="toggleSort('name')">↓</span>
-          </th>
+          <th class="col-name">Name<span id="nameSort" class="sort-icon" onclick="toggleSort('name')">↓</span></th>
           <th class="col-input">Points</th>
-          <th class="col-total">Total
-            <span id="scoreSort" class="sort-icon" onclick="toggleSort('score')">↓</span>
-          </th>
+          <th class="col-total">Total<span id="scoreSort" class="sort-icon" onclick="toggleSort('score')">↓</span></th>
         </tr>
       </thead>
       <tbody id="playerRows"></tbody>
     </table>
 
-    <div style="margin-top:10px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-      <div style="display:flex; gap:8px; align-items:center;">
+    <div style="margin-top:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <div style="display:flex; gap:6px; align-items:center;">
         <button class="btn" id="submitPointsBtn" onclick="submitPoints()">Add Points</button>
         <span id="submitFeedback" class="check-feedback">✓</span>
       </div>
 
-      <label style="display:flex; align-items:center; gap: 6px; font-size:14px; color: var(--muted); cursor:pointer;">
-        Don't clear inputs
+      <label style="display:flex; align-items:center; gap: 6px; font-size:13px; color: var(--muted); cursor:pointer;">
+        Don't clear
         <label class="toggle-slider">
           <input type="checkbox" id="keepInputsCheck">
           <span class="slider"></span>
@@ -492,18 +501,18 @@
       </label>
     </div>
 
-    <div class="chart-wrap card" style="margin-top:12px; padding:10px;">
+    <div class="chart-wrap card" style="margin-top:10px; padding:8px;">
       <canvas id="scoreChart"></canvas>
     </div>
 
     <!-- X-axis mode selector below chart -->
-    <div style="margin-top:12px; display:flex; align-items:center; gap:8px; justify-content:center;">
-      <span style="font-size:13px; color:var(--muted);">Round</span>
+    <div style="margin-top:8px; display:flex; align-items:center; gap:6px; justify-content:center;">
+      <span style="font-size:12px; color:var(--muted);">Round</span>
       <label class="toggle-slider">
         <input type="checkbox" id="xAxisModeToggle" onchange="onXAxisModeChange()">
         <span class="slider"></span>
       </label>
-      <span style="font-size:13px; color:var(--muted);">Time</span>
+      <span style="font-size:12px; color:var(--muted);">Time</span>
     </div>
   </div>
 
@@ -886,7 +895,7 @@
         const color = COLORS[origIdx % COLORS.length];
         const tr = document.createElement('tr');
         // only show individual target input when global target is NOT enabled
-        const individualTargetHtml = globalTargetEnabled ? '' : `<input class="round-input" id="target-${encodeId(pObj.name)}" placeholder="T" style="width:60px; margin-left:8px; display:inline-block;" value="${(pObj.target !== undefined && pObj.target !== null) ? pObj.target : ''}" title="Individual target (optional)" />`;
+        const individualTargetHtml = globalTargetEnabled ? '' : `<input class="round-input" id="target-${encodeId(pObj.name)}" placeholder="target" style="width:60px; margin-left:8px; display:inline-block;" value="${(pObj.target !== undefined && pObj.target !== null) ? pObj.target : ''}" title="Individual target (optional)" />`;
         tr.innerHTML = `
       <td class="col-name">
         <span class="color-dot" style="background:${color}"></span>
