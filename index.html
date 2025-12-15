@@ -34,8 +34,6 @@
       --danger: #ff453a;
     }
 
-    /* Light override (for forced light) - REMOVED */
-
     html,
     body {
       height: 100%;
@@ -538,7 +536,6 @@
     let history = []; // each item is { points: [], timestamp: date }
     let sortMode = "score-desc";
     let chart = null;
-    let savedTheme = 'dark'; // Hardcoded to dark
 
     // additional settings
     // default to global target enabled as requested
@@ -805,9 +802,8 @@
       document.getElementById('globalTargetCheck').checked = !!globalTargetEnabled;
       document.getElementById('globalTargetInput').value = (globalTargetValue !== null && globalTargetValue !== undefined) ? globalTargetValue : '';
       document.getElementById('globalTargetInput').style.display = globalTargetEnabled ? 'inline-block' : 'none';
-      document.getElementById('xAxisModeSelect').value = xAxisMode;
-      document.getElementById('keepInputsCheck').checked = !!keepInputsEnabled;
       document.getElementById('xAxisModeToggle').checked = (xAxisMode === 'time');
+      document.getElementById('keepInputsCheck').checked = !!keepInputsEnabled;
     }
 
     /* ------------------------------
@@ -1345,6 +1341,12 @@
       if (!ok) return;
       history = [{ points: players.map(() => 0), timestamp: new Date().toISOString() }];
       computeScores();
+
+      // clear any open modals
+      const modalRoot = document.getElementById('modalContainer');
+      modalRoot.innerHTML = '';
+      modalRoot.style.display = 'none';
+
       updateAll();
       saveState();
     }
@@ -1352,6 +1354,12 @@
     function confirmReset() {
       const ok = confirm('Reset everything and return to player setup? This will clear players, scores and history.');
       if (!ok) return;
+
+      // clear any open modals
+      const modalRoot = document.getElementById('modalContainer');
+      modalRoot.innerHTML = '';
+      modalRoot.style.display = 'none';
+
       localStorage.removeItem(STATE_KEY);
       location.reload();
     }
@@ -1424,17 +1432,26 @@
     function init() {
       // load state if present
       const had = loadState();
-      if (!had) {
-        addPlayerInput('');
-        addPlayerInput('');
-        applyTheme();
-        return;
-      }
+
+      // always clear modal on init
+      const modalRoot = document.getElementById('modalContainer');
+      modalRoot.innerHTML = '';
+      modalRoot.style.display = 'none';
 
       applyTheme();
 
+      if (!had) {
+        addPlayerInput('');
+        addPlayerInput('');
+        return;
+      }
+
       // if players exist, go to game view and ensure structures okay
       if (players && players.length > 0) {
+        // Show game view FIRST before accessing its elements
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('game').style.display = 'block';
+
         // ensure history has at least round 0 snapshot
         if (!history || history.length === 0) {
           history = [{ points: players.map(() => 0), timestamp: new Date().toISOString() }];
@@ -1443,8 +1460,7 @@
           computeScores();
         }
 
-        // update global target UI
-        // default to global target enabled (and show its input)
+        // update global target UI (now that elements are visible)
         const gcb = document.getElementById('globalTargetCheck');
         if (gcb) gcb.checked = !!globalTargetEnabled;
         const gIn = document.getElementById('globalTargetInput');
@@ -1452,12 +1468,9 @@
           gIn.value = (globalTargetValue !== null && globalTargetValue !== undefined) ? globalTargetValue : '';
           gIn.style.display = globalTargetEnabled ? 'inline-block' : 'none';
         }
-        document.getElementById('xAxisModeSelect').value = xAxisMode;
         document.getElementById('keepInputsCheck').checked = !!keepInputsEnabled;
         document.getElementById('xAxisModeToggle').checked = (xAxisMode === 'time');
 
-        document.getElementById('setup').style.display = 'none';
-        document.getElementById('game').style.display = 'block';
         renderPlayerRows();
         updateAll();
       } else {
