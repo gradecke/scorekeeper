@@ -568,6 +568,7 @@
     let globalTargetValue = null;
     let xAxisMode = 'round'; // 'round' | 'time'
     let keepInputsEnabled = false; // persist checkbox state
+    let lastInputValues = {}; // store last input values per player
 
     /* encode name to id-safe (define early so it's available everywhere) */
     function encodeId(s) { return btoa(unescape(encodeURIComponent(s))).replace(/=/g, ''); }
@@ -585,7 +586,8 @@
           globalTargetEnabled,
           globalTargetValue,
           xAxisMode,
-          keepInputsEnabled
+          keepInputsEnabled,
+          lastInputValues
         }
       };
       try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch (e) { }
@@ -607,6 +609,7 @@
         globalTargetValue = (set.globalTargetValue !== undefined) ? set.globalTargetValue : null;
         xAxisMode = set.xAxisMode || 'round';
         keepInputsEnabled = !!set.keepInputsEnabled;
+        lastInputValues = set.lastInputValues || {};
 
         // Recalculate scores from history (source of truth)
         computeScores();
@@ -912,6 +915,10 @@
         const tr = document.createElement('tr');
         // only show individual target input when global target is NOT enabled
         const individualTargetHtml = globalTargetEnabled ? '' : `<input class="round-input" id="target-${encodeId(pObj.name)}" placeholder="target" style="width:60px; margin-left:8px; display:inline-block;" value="${(pObj.target !== undefined && pObj.target !== null) ? pObj.target : ''}" title="Individual target (optional)" />`;
+
+        // Get saved input value for this player if keepInputs is enabled
+        const savedValue = (keepInputsEnabled && lastInputValues[pObj.name]) ? lastInputValues[pObj.name] : '';
+
         tr.innerHTML = `
       <td class="col-name">
         <span class="color-dot" style="background:${color}"></span>
@@ -919,7 +926,7 @@
         ${individualTargetHtml}
       </td>
       <td class="col-input">
-        <input id="points-${encodeId(pObj.name)}" class="numeric-input" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+        <input id="points-${encodeId(pObj.name)}" class="numeric-input" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="${escapeHtml(savedValue)}">
       </td>
       <td class="col-total">
         <div class="score-circle-wrapper">
@@ -1008,13 +1015,20 @@
       const keepInputs = document.getElementById('keepInputsCheck').checked;
       keepInputsEnabled = keepInputs; // update global state
       const preserved = {};
-      // capture current input values (if preserve requested) so render won't wipe them
+
+      // capture current input values (always save to lastInputValues if keepInputs is on)
       if (keepInputs) {
+        lastInputValues = {}; // reset
         players.forEach(pObj => {
           const id = `points-${encodeId(pObj.name)}`;
           const el = document.getElementById(id);
-          if (el) preserved[id] = el.value;
+          if (el) {
+            preserved[id] = el.value;
+            lastInputValues[pObj.name] = el.value; // save to persistent storage
+          }
         });
+      } else {
+        lastInputValues = {}; // clear saved values when disabled
       }
 
       const roundPoints = [];
@@ -1041,7 +1055,7 @@
         });
         showSubmitFeedback();
       }
-      saveState(); // save the keepInputs preference
+      saveState(); // save the keepInputs preference and lastInputValues
     }
 
     function showSubmitFeedback() {
