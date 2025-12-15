@@ -1505,26 +1505,33 @@
         evt.preventDefault();
         evt.stopPropagation();
       }
-      const m = document.getElementById('actionsMenu');
+      // Find the menu within the same parent container as the button that was clicked
+      const button = evt ? evt.currentTarget : null;
+      const container = button ? button.closest('.actions-container') : document.querySelector('.actions-container');
+      const m = container ? container.querySelector('.actions-menu') : null;
       if (m) m.style.display = m.style.display === 'block' ? 'none' : 'block';
     }
 
     // close menu when clicking outside
     document.addEventListener('mousedown', e => {
-      const menu = document.getElementById('actionsMenu');
-      const container = document.querySelector('.actions-container');
-      if (menu && container && menu.style.display === 'block') {
-        if (!container.contains(e.target)) {
-          menu.style.display = 'none';
+      const menus = document.querySelectorAll('.actions-menu');
+      menus.forEach(menu => {
+        const container = menu.closest('.actions-container');
+        if (menu && container && menu.style.display === 'block') {
+          if (!container.contains(e.target)) {
+            menu.style.display = 'none';
+          }
         }
-      }
+      });
     }, true); // use capture phase for early event handling
 
     // close menu when any menu button is clicked
     document.addEventListener('click', e => {
-      if (e.target.closest('#actionsMenu button')) {
-        const menu = document.getElementById('actionsMenu');
-        if (menu) menu.style.display = 'none';
+      if (e.target.closest('.actions-menu button')) {
+        const menus = document.querySelectorAll('.actions-menu');
+        menus.forEach(menu => {
+          if (menu) menu.style.display = 'none';
+        });
       }
     });
   </script>
