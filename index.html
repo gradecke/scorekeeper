@@ -37,6 +37,8 @@
     html,
     body {
       height: 100%;
+      overflow-x: hidden;
+      /* Prevent horizontal scroll */
     }
 
     body {
@@ -50,6 +52,17 @@
       margin-right: auto;
       -webkit-text-size-adjust: 100%;
       overflow-y: auto;
+      overflow-x: hidden;
+      /* Prevent horizontal scroll */
+      width: 100%;
+      /* Ensure body doesn't exceed viewport */
+      box-sizing: border-box;
+    }
+
+    /* Prevent all elements from exceeding container */
+    * {
+      box-sizing: border-box;
+      max-width: 100%;
     }
 
     h1 {
@@ -243,6 +256,8 @@
       text-align: center;
       box-sizing: border-box;
       -webkit-appearance: none;
+      max-width: 70px;
+      /* Prevent input from expanding */
     }
 
     .color-dot {
@@ -449,25 +464,26 @@
       style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
       <div
         style="display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.03); padding:4px 8px; border-radius:8px;">
-        <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted);">
+        <label
+          style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); white-space:nowrap;">
           Global target
           <label class="toggle-slider">
             <input type="checkbox" id="globalTargetCheck" onchange="toggleGlobalTarget()">
             <span class="slider"></span>
           </label>
         </label>
-        <input id="globalTargetInput" class="numeric-input" placeholder="Global target"
-          style="width:90px; display:none;" type="number" min="0" />
+        <input id="globalTargetInput" class="numeric-input" placeholder="999"
+          style="width:55px; max-width:55px; display:none;" type="number" min="0" max="999" />
       </div>
 
       <div style="display:flex; gap:6px; align-items:center;">
-        <button class="icon-btn" title="Save / Load Configurations" onclick="openConfigDialog()">💾</button>
         <div class="actions-container">
           <button class="icon-btn" onclick="toggleActions(event)">🔧</button>
-          <div id="actionsMenu" class="actions-menu" style="display:none;">
+          <div class="actions-menu" style="display:none;">
             <button onclick="confirmNewGame()">New Game (Same Players)</button>
             <button onclick="confirmReset()">Reset (New Players)</button>
             <button onclick="openEditRounds()">Edit Previous Rounds</button>
+            <button onclick="openConfigDialog()">💾 Manage Configurations</button>
             <button onclick="exportGame()">Export Game</button>
             <button onclick="importGame()">Import Game</button>
           </div>
