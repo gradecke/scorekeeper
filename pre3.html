@@ -1,766 +1,1511 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="theme-dark">
+
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Scorekeeper</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Scorekeeper</title>
 
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 
-<style>
-  /* Default (light) variables */
-  :root{
-    --bg: #f2f2f7;
-    --card: #ffffff;
-    --text: #111;
-    --muted: #6b6b70;
-    --border: #d0d0d6;
-    --primary: #007AFF;
-    --danger: #ff3b30;
-  }
+  <style>
+    /* Default (light) variables */
+    :root {
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --text: #111;
+      --muted: #6b6b70;
+      --border: #d0d0d6;
+      --primary: #007AFF;
+      --danger: #ff3b30;
+    }
 
-  /* Dark overrides applied by .theme-dark class */
-  .theme-dark {
-    --bg: #000000;
-    --card: #1c1c1e;
-    --text: #f2f2f7;
-    --muted: #a9a9ae;
-    --border: #303034;
-    --primary: #0a84ff;
-    --danger: #ff453a;
-  }
+    /* Dark overrides applied by .theme-dark class */
+    .theme-dark {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --text: #f2f2f7;
+      --muted: #a9a9ae;
+      --border: #303034;
+      --primary: #0a84ff;
+      --danger: #ff453a;
+    }
 
-  /* Light override (for forced light) */
-  .theme-light {
-    --bg: #f2f2f7;
-    --card: #ffffff;
-    --text: #111;
-    --muted: #6b6b70;
-    --border: #d0d0d6;
-    --primary: #007AFF;
-    --danger: #ff3b30;
-  }
+    /* Light override (for forced light) - REMOVED */
 
-  html, body {
-    height: 100%;
-  }
+    html,
+    body {
+      height: 100%;
+    }
 
-  body{
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
-    margin: 0;
-    padding: 16px;
-    background: var(--bg);
-    color: var(--text);
-    max-width: 820px;
-    margin-left: auto;
-    margin-right: auto;
-    -webkit-text-size-adjust: 100%;
-    overflow-y: auto;
-  }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 820px;
+      margin-left: auto;
+      margin-right: auto;
+      -webkit-text-size-adjust: 100%;
+      overflow-y: auto;
+    }
 
-  h1{ text-align:center; margin: 6px 0 14px; font-size:20px; }
+    h1 {
+      text-align: center;
+      margin: 6px 0 14px;
+      font-size: 20px;
+    }
 
-  .card{
-    background: var(--card);
-    border-radius: 12px;
-    padding: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-    margin-bottom: 14px;
-    border: 1px solid rgba(0,0,0,0.02);
-  }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      margin-bottom: 14px;
+      border: 1px solid rgba(0, 0, 0, 0.02);
+    }
 
-  /* Top bar */
-  .topbar {
-    display:flex;
-    justify-content:flex-end;
-    gap: 8px;
-    align-items:center;
-    margin-bottom: 8px;
-  }
+    /* Top bar */
+    .topbar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
 
-  .btn {
-    background: var(--primary);
-    color: white;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: none;
-    font-weight: 600;
-    font-size: 15px;
-  }
+    .btn {
+      background: var(--primary);
+      color: white;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 600;
+      font-size: 15px;
+    }
 
-  .icon-btn {
-    background: var(--card);
-    color: var(--text);
-    border: 1px solid var(--border);
-    padding: 8px 10px;
-    border-radius: 10px;
-    font-size: 16px;
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-  }
+    .icon-btn {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-  .actions-container { position: relative; display:inline-block; }
+    .actions-container {
+      position: relative;
+      display: inline-block;
+    }
 
-  .actions-menu {
-    position: absolute;
-    right: 0;
-    top: 44px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
-    border-radius: 10px;
-    min-width: 220px;
-    z-index: 120;
-    padding: 8px;
-  }
-  .actions-menu button { 
-    display:block; 
-    width:100%; 
-    background: transparent; 
-    border: none; 
-    padding: 10px 8px; 
-    text-align:left; 
-    color: var(--text); 
-    border-radius:8px;
-    font-weight:600;
-  }
-  .actions-menu button:hover{ background: rgba(0,0,0,0.04); }
+    .actions-menu {
+      position: absolute;
+      right: 0;
+      top: 44px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+      border-radius: 10px;
+      min-width: 220px;
+      z-index: 120;
+      padding: 8px;
+    }
 
-  /* Setup */
-  #playerInputs .player-input-row { margin-bottom:10px; overflow:hidden; }
-  input.player-name {
-    width:100%;
-    padding:10px;
-    border-radius:10px;
-    border:1px solid var(--border);
-    background: var(--card);
-    color: var(--text);
-    font-size:15px;
-    box-sizing: border-box;   /* important to avoid overflow */
-    max-width:100%;           /* avoid exceeding viewport */
-    -webkit-appearance: none;
-  }
+    .actions-menu button {
+      display: block;
+      width: 100%;
+      background: transparent;
+      border: none;
+      padding: 10px 8px;
+      text-align: left;
+      color: var(--text);
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 15px;
+    }
 
-  .table {
-    width:100%;
-    border-collapse:collapse;
-  }
+    .actions-menu button:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
 
-  .table th, .table td {
-    padding: 10px 8px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: middle;
-  }
+    /* Toggle slider styling */
+    .toggle-slider {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 28px;
+      margin: 0 8px;
+    }
 
-  .table th {
-    font-size: 14px;
-    font-weight: 700;
-    text-align: left;
-    cursor: default;
-  }
+    .toggle-slider input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
 
-  .col-name { width: 55%; }
-  .col-input { width: 25%; text-align:center; }
-  .col-total { width: 20%; text-align:right; }
+    .toggle-slider .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--border);
+      transition: all 300ms ease;
+      border-radius: 28px;
+    }
 
-  .numeric-input {
-    width: 84px;
-    padding:8px;
-    border-radius:8px;
-    border:1px solid var(--border);
-    font-size:15px;
-    text-align:center;
-    box-sizing: border-box;
-    -webkit-appearance: none;
-  }
+    .toggle-slider .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--card);
+      transition: all 300ms ease;
+      border-radius: 50%;
+    }
 
-  .color-dot {
-    width:12px;
-    height:12px;
-    border-radius:50%;
-    display:inline-block;
-    margin-right:8px;
-    vertical-align: middle;
-  }
+    .toggle-slider input:checked+.slider {
+      background-color: var(--primary);
+    }
 
-  .sort-icon {
-    margin-left:8px;
-    font-weight:800;
-    color: var(--muted);
-    font-size:14px;
-    cursor: pointer;
-    user-select: none;
-  }
+    .toggle-slider input:checked+.slider:before {
+      transform: translateX(22px);
+    }
 
-  /* Chart container */
-  .chart-wrap {
-    height: 40vh;
-    max-height: 50vh;
-    min-height: 180px;
-    margin-top: 12px;
-    overflow: hidden;
-    position: relative;
-  }
-  canvas { width:100% !important; height:100% !important; display:block; }
+    /* Setup */
+    #playerInputs .player-input-row {
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
 
-  /* modal for editing rounds */
-  .modal-backdrop {
-    position: fixed;
-    left:0; right:0; top:0; bottom:0;
-    background: rgba(0,0,0,0.4);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    z-index: 9999;
-  }
-  .modal {
-    width: 95%;
-    max-width: 900px;
-    max-height: 85vh;
-    overflow:auto;
-    background: var(--card);
-    border-radius: 12px;
-    padding: 12px;
-    border: 1px solid var(--border);
-  }
-  .modal .modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
-  .modal table { width:100%; border-collapse:collapse; margin-top:8px; }
-  .modal table th, .modal table td { padding:8px; border-bottom:1px solid var(--border); font-size:14px; text-align:center; }
-  .modal input.round-input { width:70px; padding:6px; border-radius:6px; border:1px solid var(--border); text-align:center; box-sizing:border-box; }
+    input.player-name {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 15px;
+      box-sizing: border-box;
+      /* important to avoid overflow */
+      max-width: 100%;
+      /* avoid exceeding viewport */
+      -webkit-appearance: none;
+    }
 
-  /* small screens */
-  @media (max-width:420px){
-    .col-name{ width: 60%; }
-    .col-input{ width: 25%; }
-    .col-total{ width: 15%; font-size:14px; }
-    .numeric-input{ width:70px; padding:6px; }
-  }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
 
-  .muted { color: var(--muted); font-size:13px; margin-top:6px; }
-</style>
+    .table th,
+    .table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .table th {
+      font-size: 14px;
+      font-weight: 700;
+      text-align: left;
+      cursor: default;
+    }
+
+    .table th.col-input,
+    .table th.col-total {
+      text-align: center;
+    }
+
+    .col-name {
+      width: 55%;
+    }
+
+    .col-input {
+      width: 25%;
+      text-align: center;
+    }
+
+    .col-total {
+      width: 20%;
+      text-align: center;
+    }
+
+    .numeric-input {
+      width: 84px;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 15px;
+      text-align: center;
+      box-sizing: border-box;
+      -webkit-appearance: none;
+    }
+
+    .color-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    .sort-icon {
+      margin-left: 8px;
+      font-weight: 800;
+      color: var(--muted);
+      font-size: 14px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* Chart container */
+    .chart-wrap {
+      height: 40vh;
+      max-height: 50vh;
+      min-height: 180px;
+      margin-top: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+
+    /* modal for editing rounds */
+    .modal-backdrop {
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .modal {
+      width: 95%;
+      max-width: 900px;
+      max-height: 85vh;
+      overflow: auto;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .modal .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
+    .modal table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+
+    .modal table th,
+    .modal table td {
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .modal input.round-input {
+      width: 70px;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    /* Dark-mode input improvements */
+    input.player-name,
+    .numeric-input,
+    .round-input {
+      background: #151518;
+      /* darker input background for contrast */
+      color: var(--text);
+      border: 1px solid var(--border);
+      caret-color: var(--text);
+    }
+
+    input.player-name::placeholder,
+    .numeric-input::placeholder,
+    .round-input::placeholder {
+      color: var(--muted);
+      opacity: 1;
+    }
+
+    input.player-name:focus,
+    .numeric-input:focus,
+    .round-input:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.12);
+      border-color: var(--primary);
+    }
+
+    /* small animated feedback checkmark */
+    .check-feedback {
+      display: inline-block;
+      font-weight: 700;
+      color: var(--primary);
+      margin-left: 8px;
+      opacity: 0;
+      transform: scale(0.8) rotate(-10deg);
+      transition: all 280ms cubic-bezier(.2, .9, .2, 1);
+    }
+
+    .check-feedback.show {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+
+    /* Target progress circle around total score */
+    .score-circle-wrapper {
+      position: relative;
+      width: 100%;
+      display: inline-block;
+    }
+
+    .score-circle-svg {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      margin: auto;
+      pointer-events: none;
+    }
+
+    .score-value {
+      position: relative;
+      z-index: 2;
+      font-weight: 600;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    /* adjust chart grid/axis for improved dark-mode contrast */
+    /* rely on var(--border) and var(--text) already used in JS */
+  </style>
 </head>
+
 <body>
+  <h1>Scorekeeper</h1>
 
-<h1>Scorekeeper</h1>
+  <!-- Top bar -->
+  <div class="topbar">
+    <div style="display:flex; gap:8px; align-items:center;">
+      <button class="icon-btn" title="Save / Load Configurations" onclick="openConfigDialog()">💾</button>
+    </div>
 
-<!-- Top bar -->
-<div class="topbar">
-  <div class="actions-container">
-    <button class="icon-btn" onclick="toggleActions()">Actions ▾</button>
-    <div id="actionsMenu" class="actions-menu" style="display:none;">
-      <button onclick="confirmNewGame()">New Game (Same Players)</button>
-      <button onclick="confirmReset()">Reset (New Players)</button>
-      <button onclick="openEditRounds()">Edit Previous Rounds</button>
+    <div class="actions-container">
+      <!-- stop event propagation so global click handler doesn't immediately close the menu -->
+      <button class="icon-btn" onclick="toggleActions(event)">Actions ▾</button>
+      <div id="actionsMenu" class="actions-menu" style="display:none;">
+        <button onclick="confirmNewGame()">New Game (Same Players)</button>
+        <button onclick="confirmReset()">Reset (New Players)</button>
+        <button onclick="openEditRounds()">Edit Previous Rounds</button>
+        <button onclick="exportGame()">Export Game</button>
+        <button onclick="importGame()">Import Game</button>
+      </div>
     </div>
   </div>
 
-  <button id="themeToggle" class="icon-btn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
-</div>
+  <!-- Setup -->
+  <div id="setup" class="card">
+    <div id="playerInputs"></div>
 
-<!-- Setup -->
-<div id="setup" class="card">
-  <div id="playerInputs"></div>
-
-  <div style="display:flex; gap:8px; margin-top:8px;">
-    <button class="btn" style="flex:1" onclick="addPlayerInput()">Add Player</button>
-    <button class="btn" style="flex:1;" onclick="startGame()">Start Game</button>
-  </div>
-  <div class="muted">Tip: Add player names, then press Start Game. Add at least one player.</div>
-</div>
-
-<!-- Game -->
-<div id="game" class="card" style="display:none;">
-  <table class="table" role="table" aria-label="Players table">
-    <thead>
-      <tr>
-        <th class="col-name">Name
-          <span id="nameSort" class="sort-icon" onclick="toggleSort('name')">↓</span>
-        </th>
-        <th class="col-input">Points</th>
-        <th class="col-total">Total
-          <span id="scoreSort" class="sort-icon" onclick="toggleSort('score')">↓</span>
-        </th>
-      </tr>
-    </thead>
-    <tbody id="playerRows"></tbody>
-  </table>
-
-  <div style="margin-top:10px;">
-    <button class="btn" onclick="submitPoints()">Add Points</button>
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button class="btn" style="flex:1" onclick="addPlayerInput()">Add Player</button>
+      <button class="btn" style="flex:1;" onclick="startGame()">Start Game</button>
+    </div>
+    <div class="muted">Tip: Add player names, then press Start Game. Add at least one player.</div>
   </div>
 
-  <div class="chart-wrap card" style="margin-top:12px; padding:10px;">
-    <canvas id="scoreChart"></canvas>
+  <!-- Game -->
+  <div id="game" class="card" style="display:none;">
+    <!-- Global target control at top -->
+    <div
+      style="margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+      <label style="display:flex; align-items:center; gap:8px; font-size:14px; color:var(--muted);">
+        Global target
+        <label class="toggle-slider">
+          <input type="checkbox" id="globalTargetCheck" onchange="toggleGlobalTarget()">
+          <span class="slider"></span>
+        </label>
+      </label>
+      <input id="globalTargetInput" class="numeric-input" placeholder="Target" style="width:100px; display:none;"
+        type="number" min="0" />
+    </div>
+
+    <table class="table" role="table" aria-label="Players table">
+      <thead>
+        <tr>
+          <th class="col-name">Name
+            <span id="nameSort" class="sort-icon" onclick="toggleSort('name')">↓</span>
+          </th>
+          <th class="col-input">Points</th>
+          <th class="col-total">Total
+            <span id="scoreSort" class="sort-icon" onclick="toggleSort('score')">↓</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody id="playerRows"></tbody>
+    </table>
+
+    <div style="margin-top:10px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn" id="submitPointsBtn" onclick="submitPoints()">Add Points</button>
+        <span id="submitFeedback" class="check-feedback">✓</span>
+      </div>
+
+      <label style="display:flex; align-items:center; gap: 6px; font-size:14px; color: var(--muted); cursor:pointer;">
+        Don't clear inputs
+        <label class="toggle-slider">
+          <input type="checkbox" id="keepInputsCheck">
+          <span class="slider"></span>
+        </label>
+      </label>
+    </div>
+
+    <div class="chart-wrap card" style="margin-top:12px; padding:10px;">
+      <canvas id="scoreChart"></canvas>
+    </div>
+
+    <!-- X-axis mode selector below chart -->
+    <div style="margin-top:12px; display:flex; align-items:center; gap:8px; justify-content:center;">
+      <span style="font-size:13px; color:var(--muted);">Round</span>
+      <label class="toggle-slider">
+        <input type="checkbox" id="xAxisModeToggle" onchange="onXAxisModeChange()">
+        <span class="slider"></span>
+      </label>
+      <span style="font-size:13px; color:var(--muted);">Time</span>
+    </div>
   </div>
-</div>
 
-<!-- Modal placeholder -->
-<div id="modalContainer" style="display:none;"></div>
+  <!-- Modal placeholder -->
+  <div id="modalContainer" style="display:none;"></div>
 
-<script>
-/* ------------------------------
-   Config + state
-   ------------------------------ */
-const COLORS = [
-  "#007AFF",
-  "#FF3B30",
-  "#34C759",
-  "#AF52DE",
-  "#FF9500",
-  "#5AC8FA"
-];
+  <script>
+    /* ------------------------------
+       Config + state
+       ------------------------------ */
+    const COLORS = [
+      "#007AFF",
+      "#FF3B30",
+      "#34C759",
+      "#AF52DE",
+      "#FF9500",
+      "#5AC8FA"
+    ];
 
-let players = [];
-let scores = {};
-let history = []; // each snapshot is array same order as players[]
-let sortMode = "score-desc";
-let chart = null;
-let savedTheme = null;
+    // storage keys & version
+    const STATE_KEY = "scorekeeper_state";
+    const CONFIGS_KEY = "scorekeeper_configs";
+    const CONFIG_VERSION = 1;
 
-/* ------------------------------
-   Storage & Theme helpers
-   ------------------------------ */
-function saveState(){
-  const state = { players, scores, history, sortMode, theme: savedTheme };
-  try { localStorage.setItem("scorekeeper_state", JSON.stringify(state)); } catch(e){}
-}
+    // players: array of objects { name: string, target?: number }
+    let players = [];
+    // scores is ephemeral, computed from history by computeScores()
+    let scores = {};
+    // history: array of { points: number[], timestamp: ISOString }
+    let history = []; // each item is { points: [], timestamp: date }
+    let sortMode = "score-desc";
+    let chart = null;
+    let savedTheme = 'dark'; // Hardcoded to dark
 
-function loadState(){
-  try{
-    const raw = localStorage.getItem("scorekeeper_state");
-    if(!raw) return false;
-    const s = JSON.parse(raw);
-    if(!s.players) return false;
-    players = s.players || [];
-    scores = s.scores || {};
-    history = s.history || [];
-    sortMode = s.sortMode || "score-desc";
-    savedTheme = s.theme === undefined ? null : s.theme;
-    return true;
-  } catch(e){
-    return false;
-  }
-}
+    // additional settings
+    // default to global target enabled as requested
+    let globalTargetEnabled = true;
+    let globalTargetValue = null;
+    let xAxisMode = 'round'; // 'round' | 'time'
+    let keepInputsEnabled = false; // persist checkbox state
 
-/* Apply theme: savedTheme: 'dark'|'light'|null */
-function applyTheme(){
-  const html = document.documentElement;
-  html.classList.remove('theme-dark','theme-light');
-  if(savedTheme === 'dark') html.classList.add('theme-dark');
-  else if(savedTheme === 'light') html.classList.add('theme-light');
-  else {
-    // follow system preference
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if(prefersDark) html.classList.add('theme-dark');
-    else html.classList.add('theme-light');
-  }
+    /* encode name to id-safe (define early so it's available everywhere) */
+    function encodeId(s) { return btoa(unescape(encodeURIComponent(s))).replace(/=/g, ''); }
 
-  // set icon: show sun if currently dark (click will switch)
-  const isDark = html.classList.contains('theme-dark');
-  document.getElementById('themeToggle').textContent = isDark ? '☀️' : '🌙';
-}
-
-/* toggle theme cycle: null -> dark -> light -> null */
-document.getElementById('themeToggle').addEventListener('click', () => {
-  if(savedTheme === null) savedTheme = 'dark';
-  else if(savedTheme === 'dark') savedTheme = 'light';
-  else savedTheme = null;
-  applyTheme();
-  saveState();
-});
-
-/* ------------------------------
-   Actions menu
-   ------------------------------ */
-function toggleActions(){
-  const m = document.getElementById('actionsMenu');
-  m.style.display = m.style.display === 'block' ? 'none' : 'block';
-}
-document.addEventListener('click', e => {
-  if(!e.target.closest('.actions-container') && !e.target.closest('#actionsMenu') && !e.target.closest('button.icon-btn')) {
-    document.getElementById('actionsMenu').style.display = 'none';
-  }
-});
-
-/* ------------------------------
-   Player setup UI
-   ------------------------------ */
-function addPlayerInput(name = ''){
-  const container = document.getElementById('playerInputs');
-  const row = document.createElement('div');
-  row.className = 'player-input-row';
-  const safe = escapeHtml(name);
-  row.innerHTML = `<input class="player-name" placeholder="Player name" value="${safe}">`;
-  container.appendChild(row);
-}
-
-/* Escape helper */
-function escapeHtml(s = '') {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-/* ------------------------------
-   Start / Render
-   ------------------------------ */
-function startGame(){
-  const inputs = document.querySelectorAll('.player-name');
-  players = [];
-  scores = {};
-  history = [];
-
-  inputs.forEach(inp => {
-    const n = inp.value.trim();
-    if(n){
-      players.push(n);
-      scores[n] = 0;
+    /* ------------------------------
+       Storage & Theme helpers
+       ------------------------------ */
+    function saveState() {
+      const state = {
+        version: CONFIG_VERSION,
+        players,
+        history,
+        sortMode,
+        settings: {
+          globalTargetEnabled,
+          globalTargetValue,
+          xAxisMode,
+          keepInputsEnabled
+        }
+      };
+      try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch (e) { }
     }
-  });
 
-  if(players.length === 0){
-    alert('Please add at least one player name.');
-    return;
-  }
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STATE_KEY);
+        if (!raw) return false;
+        const s = JSON.parse(raw);
+        if (!s.players) return false;
 
-  // initial round 0 snapshot of zeros
-  const zeros = players.map(() => 0);
-  history = [zeros];
+        // load settings safely with defaults
+        players = (s.players || []).map(p => (typeof p === 'string') ? { name: p } : p);
+        history = s.history || [];
+        sortMode = s.sortMode || "score-desc";
+        const set = (s.settings || {});
+        globalTargetEnabled = !!set.globalTargetEnabled;
+        globalTargetValue = (set.globalTargetValue !== undefined) ? set.globalTargetValue : null;
+        xAxisMode = set.xAxisMode || 'round';
+        keepInputsEnabled = !!set.keepInputsEnabled;
 
-  document.getElementById('setup').style.display = 'none';
-  document.getElementById('game').style.display = 'block';
-  renderPlayerRows();
-  updateAll();
-  saveState();
-}
+        // Recalculate scores from history (source of truth)
+        computeScores();
 
-function renderPlayerRows(){
-  const tbody = document.getElementById('playerRows');
-  tbody.innerHTML = '';
+        return true;
+      } catch (e) {
+        console.error("Failed to load state:", e);
+        return false;
+      }
+    }
 
-  const order = sortedPlayers();
-  order.forEach((p, displayIdx) => {
-    const origIdx = players.indexOf(p);
-    const color = COLORS[origIdx % COLORS.length];
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
+    /* Apply theme: hardcoded to dark */
+    function applyTheme() {
+      document.documentElement.classList.add('theme-dark');
+    }
+
+    /* ------------------------------
+       Config management (save/load named configs)
+       ------------------------------ */
+    function openConfigDialog() {
+      const modalRoot = document.getElementById('modalContainer');
+      modalRoot.innerHTML = '';
+      modalRoot.style.display = 'block';
+
+      const backdrop = document.createElement('div');
+      backdrop.className = 'modal-backdrop';
+
+      const modal = document.createElement('div');
+      modal.className = 'modal';
+
+      modal.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;">
+        <strong>Manage Configurations</strong>
+      </div>
+      <div style="margin-top:8px; font-size:13px; color:var(--muted)">Save current settings or load previously saved configurations.</div>
+      <div style="margin-top:10px;">
+        <input id="cfgNameInput" placeholder="Configuration name" class="player-name" style="width:70%; display:inline-block;"/>
+        <button class="btn" id="saveCfgBtn">Save</button>
+        <button class="icon-btn" id="exportCfgCurrentBtn">Export</button>
+        <button class="icon-btn" id="importCfgFileBtn">Import</button>
+      </div>
+      <div style="margin-top:10px;">
+        <strong>Saved Configurations</strong>
+        <div id="cfgList" style="margin-top:8px;"></div>
+      </div>`;
+
+      const actions = document.createElement('div');
+      actions.className = 'modal-actions';
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'icon-btn'; closeBtn.textContent = 'Close';
+      actions.appendChild(closeBtn);
+      modal.appendChild(actions);
+
+      backdrop.appendChild(modal);
+      modalRoot.appendChild(backdrop);
+
+      // populate list
+      renderConfigList();
+
+      // listeners
+      closeBtn.addEventListener('click', () => { modalRoot.innerHTML = ''; modalRoot.style.display = 'none'; });
+      document.getElementById('saveCfgBtn').addEventListener('click', () => {
+        const name = document.getElementById('cfgNameInput').value.trim();
+        if (!name) { alert('Please provide a configuration name.'); return; }
+        saveConfig(name);
+        renderConfigList();
+        document.getElementById('cfgNameInput').value = '';
+      });
+      document.getElementById('exportCfgCurrentBtn').addEventListener('click', () => {
+        exportCurrentConfig();
+      });
+      document.getElementById('importCfgFileBtn').addEventListener('click', () => {
+        importConfigFile();
+      });
+
+      // backdrop click to close
+      backdrop.addEventListener('click', (e) => { if (e.target === backdrop) { modalRoot.innerHTML = ''; modalRoot.style.display = 'none'; } });
+    }
+
+    function getSavedConfigs() {
+      try {
+        const raw = localStorage.getItem(CONFIGS_KEY);
+        if (!raw) return [];
+        return JSON.parse(raw);
+      } catch (e) { return []; }
+    }
+
+    function persistConfigs(configs) {
+      try { localStorage.setItem(CONFIGS_KEY, JSON.stringify(configs)); } catch (e) { }
+    }
+
+    function saveConfig(name) {
+      const configs = getSavedConfigs();
+      const existingIndex = configs.findIndex(c => c.name === name);
+      const payload = {
+        meta: { name, version: CONFIG_VERSION, savedAt: new Date().toISOString() },
+        data: {
+          players,
+          history,
+          sortMode,
+          settings: { globalTargetEnabled, globalTargetValue, xAxisMode }
+        }
+      };
+      if (existingIndex >= 0) {
+        if (!confirm('A configuration with this name exists. Overwrite?')) return;
+        configs[existingIndex] = payload;
+      } else {
+        configs.push(payload);
+      }
+      persistConfigs(configs);
+      alert('Configuration saved.');
+    }
+
+    function renderConfigList() {
+      const listRoot = document.getElementById('cfgList');
+      const configs = getSavedConfigs();
+      if (!listRoot) return;
+      if (configs.length === 0) { listRoot.innerHTML = '<div class="muted">No saved configurations.</div>'; return; }
+      listRoot.innerHTML = '';
+      configs.forEach(c => {
+        const el = document.createElement('div');
+        el.style.display = 'flex';
+        el.style.gap = '8px';
+        el.style.alignItems = 'center';
+        el.style.marginBottom = '6px';
+        el.innerHTML = `<div style="flex:1;"><strong>${escapeHtml(c.meta.name)}</strong><div class="muted" style="font-size:12px">${new Date(c.meta.savedAt).toLocaleString()}</div></div>`;
+        const loadBtn = document.createElement('button'); loadBtn.className = 'btn'; loadBtn.textContent = 'Load';
+        const expBtn = document.createElement('button'); expBtn.className = 'icon-btn'; expBtn.textContent = 'Export';
+        const delBtn = document.createElement('button'); delBtn.className = 'icon-btn'; delBtn.textContent = 'Delete';
+        el.appendChild(loadBtn); el.appendChild(expBtn); el.appendChild(delBtn);
+        listRoot.appendChild(el);
+
+        loadBtn.addEventListener('click', () => {
+          if (!confirm(`Load configuration "${c.meta.name}"? This will replace current settings.`)) return;
+          applyImportedState(c.data);
+          saveState();
+          // refresh UI to reflect loaded config
+          document.getElementById('setup').style.display = 'none';
+          document.getElementById('game').style.display = 'block';
+          renderPlayerRows();
+          updateAll();
+          alert('Configuration loaded.');
+        });
+
+        expBtn.addEventListener('click', () => exportConfigData(c));
+
+        delBtn.addEventListener('click', () => {
+          if (!confirm(`Delete configuration "${c.meta.name}"?`)) return;
+          const arr = getSavedConfigs().filter(x => x.meta.name !== c.meta.name);
+          persistConfigs(arr);
+          renderConfigList();
+        });
+      });
+    }
+
+    function exportConfigData(cfg) {
+      const jsonString = JSON.stringify({ meta: cfg.meta, data: cfg.data }, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url;
+      a.download = `scorekeeper-config-${cfg.meta.name.replace(/\s+/g, '_')}.json`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportCurrentConfig() {
+      const payload = {
+        meta: { name: 'current', version: CONFIG_VERSION, savedAt: new Date().toISOString() },
+        data: { players, history, sortMode, settings: { globalTargetEnabled, globalTargetValue, xAxisMode } }
+      };
+      exportConfigData(payload);
+    }
+
+    function importConfigFile() {
+      const input = document.createElement('input'); input.type = 'file'; input.accept = '.json,application/json';
+      input.onchange = e => {
+        const file = e.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          try {
+            const payload = JSON.parse(ev.target.result);
+            // allow payload to be { meta, data } or directly the data object
+            const data = payload.data || payload;
+            // validate basics: players & history exist
+            if (!data.players || !Array.isArray(data.players)) throw new Error('Missing players array.');
+            applyImportedState(data);
+            saveState();
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            renderPlayerRows();
+            updateAll();
+            alert('Configuration imported and applied.');
+            renderConfigList();
+          } catch (err) {
+            console.error('Import failed:', err);
+            alert('Import failed: ' + err.message);
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    function applyImportedState(data) {
+      // apply with fallbacks to current defaults
+      players = (data.players || []).map(p => (typeof p === 'string') ? { name: p } : p);
+      history = data.history || (players.length ? [{ points: players.map(() => 0), timestamp: new Date().toISOString() }] : []);
+      sortMode = data.sortMode || 'score-desc';
+      const set = (data.settings || {});
+      globalTargetEnabled = !!set.globalTargetEnabled;
+      globalTargetValue = (set.globalTargetValue !== undefined) ? set.globalTargetValue : null;
+      xAxisMode = set.xAxisMode || 'round';
+      keepInputsEnabled = !!set.keepInputsEnabled;
+
+      // recompute derived scores
+      computeScores();
+
+      // update UI controls for global target and xAxis mode
+      document.getElementById('globalTargetCheck').checked = !!globalTargetEnabled;
+      document.getElementById('globalTargetInput').value = (globalTargetValue !== null && globalTargetValue !== undefined) ? globalTargetValue : '';
+      document.getElementById('globalTargetInput').style.display = globalTargetEnabled ? 'inline-block' : 'none';
+      document.getElementById('xAxisModeSelect').value = xAxisMode;
+      document.getElementById('keepInputsCheck').checked = !!keepInputsEnabled;
+      document.getElementById('xAxisModeToggle').checked = (xAxisMode === 'time');
+    }
+
+    /* ------------------------------
+       Player setup UI
+       ------------------------------ */
+    function addPlayerInput(name = '') {
+      const container = document.getElementById('playerInputs');
+      const row = document.createElement('div');
+      row.className = 'player-input-row';
+      const safe = escapeHtml(name);
+      row.innerHTML = `<input class="player-name" placeholder="Player name" value="${safe}">`;
+      container.appendChild(row);
+    }
+
+    /* Escape helper */
+    function escapeHtml(s = '') {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /* ------------------------------
+       Compute scores from history
+       ------------------------------ */
+    function computeScores() {
+      // initialize totals based on players order
+      scores = {};
+      players.forEach(p => scores[p.name] = 0);
+      // aggregate each round
+      history.forEach(round => {
+        if (!round || !Array.isArray(round.points)) return;
+        round.points.forEach((pt, pi) => {
+          const player = players[pi];
+          if (player) {
+            const val = Number(pt) || 0;
+            scores[player.name] = (scores[player.name] || 0) + val;
+          }
+        });
+      });
+    }
+
+    /* ------------------------------
+       Start / Render
+       ------------------------------ */
+    function startGame() {
+      const inputs = document.querySelectorAll('.player-name');
+      players = [];
+      history = [];
+
+      inputs.forEach(inp => {
+        const n = inp.value.trim();
+        if (n) {
+          players.push({ name: n, target: null });
+        }
+      });
+
+      if (players.length === 0) {
+        alert('Please add at least one player name.');
+        return;
+      }
+
+      // initial round 0 snapshot of zeros
+      history = [{ points: players.map(() => 0), timestamp: new Date().toISOString() }];
+
+      // compute initial scores
+      computeScores();
+
+      document.getElementById('setup').style.display = 'none';
+      document.getElementById('game').style.display = 'block';
+      renderPlayerRows();
+      updateAll();
+      saveState();
+    }
+
+    function renderPlayerRows() {
+      const tbody = document.getElementById('playerRows');
+      tbody.innerHTML = '';
+
+      const order = sortedPlayers(); // returns objects
+      order.forEach((pObj, displayIdx) => {
+        const origIdx = players.findIndex(pl => pl.name === pObj.name);
+        const color = COLORS[origIdx % COLORS.length];
+        const tr = document.createElement('tr');
+        // only show individual target input when global target is NOT enabled
+        const individualTargetHtml = globalTargetEnabled ? '' : `<input class="round-input" id="target-${encodeId(pObj.name)}" placeholder="T" style="width:60px; margin-left:8px; display:inline-block;" value="${(pObj.target !== undefined && pObj.target !== null) ? pObj.target : ''}" title="Individual target (optional)" />`;
+        tr.innerHTML = `
       <td class="col-name">
         <span class="color-dot" style="background:${color}"></span>
-        <span style="vertical-align:middle">${escapeHtml(p)}</span>
+        <span style="vertical-align:middle">${escapeHtml(pObj.name)}</span>
+        ${individualTargetHtml}
       </td>
       <td class="col-input">
-        <input id="points-${encodeId(p)}" class="numeric-input" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+        <input id="points-${encodeId(pObj.name)}" class="numeric-input" inputmode="numeric" pattern="[0-9]*" placeholder="0">
       </td>
-      <td class="col-total" id="total-${encodeId(p)}">${scores[p] ?? 0}</td>
+      <td class="col-total">
+        <div class="score-circle-wrapper">
+          <svg class="score-circle-svg" id="circle-svg-${encodeId(pObj.name)}" viewBox="0 0 50 50">
+            <circle cx="25" cy="25" r="22" fill="none" stroke="${color}" stroke-width="2" transform="rotate(-90 25 25)" />
+          </svg>
+          <div class="score-value">${scores[pObj.name] ?? 0}</div>
+        </div>
+      </td>
     `;
-    tbody.appendChild(tr);
-  });
+        tbody.appendChild(tr);
 
-  // sync sort icons look
-  const scoreIcon = document.getElementById('scoreSort');
-  const nameIcon = document.getElementById('nameSort');
-  if(sortMode === 'score-desc'){ scoreIcon.textContent = '↓'; nameIcon.textContent = '↓'; }
-  else if(sortMode === 'score-asc'){ scoreIcon.textContent = '↑'; nameIcon.textContent = '↓'; }
-  else if(sortMode === 'name-asc'){ nameIcon.textContent = '↑'; scoreIcon.textContent = '↓'; }
-  else if(sortMode === 'name-desc'){ nameIcon.textContent = '↓'; scoreIcon.textContent = '↓'; }
-}
-
-/* encode name to id-safe */
-function encodeId(s){ return btoa(unescape(encodeURIComponent(s))).replace(/=/g,''); }
-
-/* ------------------------------
-   Sorting
-   ------------------------------ */
-function sortedPlayers(){
-  return players.slice().sort((a,b) => {
-    if(sortMode === 'score-desc') return (scores[b] || 0) - (scores[a] || 0);
-    if(sortMode === 'score-asc') return (scores[a] || 0) - (scores[b] || 0);
-    if(sortMode === 'name-asc') return a.localeCompare(b);
-    if(sortMode === 'name-desc') return b.localeCompare(a);
-    return 0;
-  });
-}
-
-function toggleSort(col){
-  if(col === 'score'){
-    sortMode = (sortMode === 'score-desc') ? 'score-asc' : 'score-desc';
-  } else if(col === 'name'){
-    sortMode = (sortMode === 'name-asc') ? 'name-desc' : 'name-asc';
-  }
-  renderPlayerRows();
-  updateTotals();
-  saveState();
-}
-
-/* ------------------------------
-   Submit points & Rounds
-   ------------------------------ */
-function submitPoints(){
-  if(players.length === 0) return;
-
-  const snapshot = [];
-  players.forEach(p => {
-    const el = document.getElementById(`points-${encodeId(p)}`);
-    let raw = '';
-    if(el) raw = el.value.trim();
-    const val = (raw === '' || isNaN(parseInt(raw))) ? 0 : parseInt(raw,10);
-    scores[p] = (scores[p] || 0) + val;
-    if(el) el.value = '';
-    snapshot.push(scores[p]);
-  });
-
-  history.push(snapshot);
-  updateAll();
-  saveState();
-}
-
-/* ------------------------------
-   Update UI + Chart
-   ------------------------------ */
-function updateTotals(){
-  players.forEach(p => {
-    const td = document.getElementById(`total-${encodeId(p)}`);
-    if(td) td.textContent = scores[p] ?? 0;
-  });
-}
-
-function updateChart(){
-  const ctx = document.getElementById('scoreChart').getContext('2d');
-
-  // Ensure history always has at least Round 0
-  if(history.length === 0){
-    history = [players.map(() => 0)];
-  }
-
-  const labels = history.map((_, i) => `Round ${i}`);
-
-  const datasets = players.map((p, idx) => {
-    const color = COLORS[idx % COLORS.length];
-    // collect value at position idx from each snapshot
-    const data = history.map(snapshot => snapshot[idx] ?? 0);
-    return {
-      label: p,
-      data,
-      borderColor: color,
-      backgroundColor: color + '33',
-      borderWidth: 2.5,
-      pointRadius: 4,
-      tension: 0.25
-    };
-  });
-
-  if(chart) chart.destroy();
-  chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets
-    },
-    options: {
-      maintainAspectRatio: false,
-      responsive: true,
-      plugins: {
-        legend: { labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text') || '#000' } }
-      },
-      scales: {
-        x: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text') || '#000' } },
-        y: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text') || '#000' }, beginAtZero: true }
-      }
-    }
-  });
-}
-
-function updateAll(){
-  renderPlayerRows();
-  updateTotals();
-  updateChart();
-}
-
-/* ------------------------------
-   Edit rounds modal
-   ------------------------------ */
-function openEditRounds(){
-  // create modal content
-  const modalRoot = document.getElementById('modalContainer');
-  modalRoot.innerHTML = '';
-  modalRoot.style.display = 'block';
-
-  const backdrop = document.createElement('div');
-  backdrop.className = 'modal-backdrop';
-
-  const modal = document.createElement('div');
-  modal.className = 'modal';
-
-  // header + description
-  modal.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;">
-      <strong>Edit Previous Rounds</strong>
-      <div class="muted">Round 0..${Math.max(0, history.length-1)}</div>
-    </div>
-    <div style="margin-top:8px; font-size:13px; color:var(--muted)">Change any value. Round 0 should represent the initial totals (usually zeros).</div>`;
-
-  // table
-  const tbl = document.createElement('table');
-  // header row
-  let thead = '<tr><th>Round</th>';
-  players.forEach(p => thead += `<th>${escapeHtml(p)}</th>`);
-  thead += '</tr>';
-  let rows = thead;
-
-  // ensure history includes round 0; pad missing lengths
-  if(history.length === 0) history = [players.map(()=>0)];
-  history.forEach((snapshot, ri) => {
-    rows += `<tr><td>${ri}</td>`;
-    players.forEach((p, pi) => {
-      const v = snapshot[pi] ?? 0;
-      rows += `<td><input class="round-input" data-round="${ri}" data-player="${pi}" value="${v}" inputmode="numeric" pattern="[0-9]*"></td>`;
-    });
-    rows += '</tr>';
-  });
-
-  tbl.innerHTML = rows;
-  modal.appendChild(tbl);
-
-  // actions
-  const actions = document.createElement('div');
-  actions.className = 'modal-actions';
-  const saveBtn = document.createElement('button');
-  saveBtn.className = 'btn'; saveBtn.textContent = 'Save';
-  const cancelBtn = document.createElement('button');
-  cancelBtn.className = 'icon-btn'; cancelBtn.textContent = 'Cancel';
-
-  actions.appendChild(cancelBtn);
-  actions.appendChild(saveBtn);
-  modal.appendChild(actions);
-
-  backdrop.appendChild(modal);
-  modalRoot.appendChild(backdrop);
-
-  // event listeners
-  cancelBtn.addEventListener('click', () => {
-    modalRoot.innerHTML = ''; modalRoot.style.display = 'none';
-  });
-
-  saveBtn.addEventListener('click', () => {
-    // build new history from inputs (validate numbers)
-    const inputs = modal.querySelectorAll('.round-input');
-    // create a copy of existing history lengths
-    const newHistory = history.map(s => s.slice()); // deep-ish copy
-    let ok = true;
-    inputs.forEach(inp => {
-      const r = parseInt(inp.dataset.round,10);
-      const p = parseInt(inp.dataset.player,10);
-      let v = inp.value.trim();
-      if(v === '' || isNaN(parseInt(v))) v = 0;
-      const nv = parseInt(v,10);
-      if(!Number.isFinite(nv)) ok = false;
-      if(ok){
-        // ensure row exists
-        if(!newHistory[r]) newHistory[r] = players.map(()=>0);
-        newHistory[r][p] = nv;
-      }
-    });
-
-    if(!ok){
-      alert('Please enter valid numbers.');
-      return;
-    }
-
-    // replace history, recompute scores from last snapshot
-    history = newHistory;
-    // recompute scores: last entry
-    const last = history[history.length-1];
-    players.forEach((p, idx) => scores[p] = last[idx] ?? 0);
-
-    // ensure at least round 0 exists
-    if(history.length === 0) history = [players.map(()=>0)];
-
-    updateAll();
-    saveState();
-
-    modalRoot.innerHTML = ''; modalRoot.style.display = 'none';
-  });
-
-  // allow backdrop click to close
-  backdrop.addEventListener('click', (e) => {
-    if(e.target === backdrop){
-      modalRoot.innerHTML = ''; modalRoot.style.display = 'none';
-    }
-  });
-}
-
-/* ------------------------------
-   New game & reset
-   ------------------------------ */
-function confirmNewGame(){
-  const ok = confirm('Start a new game with the same players? This will reset totals and history but keep player names.');
-  if(!ok) return;
-  players.forEach(p => scores[p] = 0);
-  history = [players.map(()=>0)];
-  updateAll();
-  saveState();
-}
-
-function confirmReset(){
-  const ok = confirm('Reset everything and return to player setup? This will clear players, scores and history.');
-  if(!ok) return;
-  localStorage.removeItem('scorekeeper_state');
-  location.reload();
-}
-
-/* ------------------------------
-   Init
-   ------------------------------ */
-function init(){
-  // load state if present
-  const had = loadState();
-  if(!had){
-    addPlayerInput('');
-    addPlayerInput('');
-    applyTheme();
-    return;
-  }
-
-  applyTheme();
-
-  // if players exist, go to game view and ensure structures okay
-  if(players && players.length > 0){
-    // ensure scores exist for each player
-    players.forEach(p => { if(scores[p] === undefined) scores[p] = 0; });
-    // ensure history has at least round 0 snapshot
-    if(!history || history.length === 0){
-      history = [players.map(()=>0)];
-    } else {
-      // ensure snapshots have correct length for players; pad missing values with zeros
-      history = history.map(snap => {
-        const out = [];
-        for(let i=0;i<players.length;i++) out.push(snap[i] ?? 0);
-        return out;
+        // only wire the target input if it exists (i.e. when globalTargetEnabled === false)
+        const tEl = document.getElementById(`target-${encodeId(pObj.name)}`);
+        tEl && tEl.addEventListener('change', (e) => {
+          const raw = e.target.value.trim();
+          const val = (raw === '' || isNaN(parseInt(raw))) ? null : parseInt(raw, 10);
+          const idx = players.findIndex(pl => pl.name === pObj.name);
+          if (idx >= 0) players[idx].target = val;
+          saveState();
+          updateChart();
+          updateScoreCircles(); // update circles when target changes
+        });
       });
-      // recalc scores from last snapshot
-      const last = history[history.length-1];
-      players.forEach((p, idx) => scores[p] = last[idx] ?? 0);
+
+      // sync sort icons look
+      const scoreIcon = document.getElementById('scoreSort');
+      const nameIcon = document.getElementById('nameSort');
+      if (sortMode === 'score-desc') { scoreIcon.textContent = '↓'; nameIcon.textContent = '↓'; }
+      else if (sortMode === 'score-asc') { scoreIcon.textContent = '↑'; nameIcon.textContent = '↓'; }
+      else if (sortMode === 'name-asc') { nameIcon.textContent = '↑'; scoreIcon.textContent = '↓'; }
+      else if (sortMode === 'name-desc') { nameIcon.textContent = '↓'; scoreIcon.textContent = '↓'; }
+
+      // update circle opacities based on target progress
+      updateScoreCircles();
     }
 
-    document.getElementById('setup').style.display = 'none';
-    document.getElementById('game').style.display = 'block';
-    renderPlayerRows();
-    updateAll();
-  } else {
-    // no players saved: show setup with two blanks
-    addPlayerInput('');
-    addPlayerInput('');
-  }
-}
+    /* Update circle stroke based on score-to-target ratio */
+    function updateScoreCircles() {
+      players.forEach(p => {
+        const svgEl = document.getElementById(`circle-svg-${encodeId(p.name)}`);
+        if (!svgEl) return;
 
-window.addEventListener('load', init);
+        const circleEl = svgEl.querySelector('circle');
+        if (!circleEl) return;
 
-/* keyboard enter to add points */
-document.addEventListener('keypress', function(e){
-  if(e.key === 'Enter' && document.getElementById('game').style.display === 'block'){
-    submitPoints();
-    e.preventDefault();
-  }
-});
-</script>
+        const score = scores[p.name] ?? 0;
+        // determine target: use global target if enabled, else use player's individual target
+        const target = (globalTargetEnabled && globalTargetValue !== null) ? globalTargetValue : p.target;
+
+        if (target === null || target === undefined || target <= 0) {
+          // no target set, minimal opacity
+          circleEl.style.opacity = '0.15';
+          circleEl.style.strokeDasharray = 'none';
+        } else {
+          // stroke-dasharray for progress
+          const ratio = Math.min(score / target, 1);
+          const circumference = 2 * Math.PI * 22; // radius 22
+          const progressLength = circumference * ratio;
+          circleEl.style.strokeDasharray = `${progressLength} ${circumference}`;
+          circleEl.style.opacity = '0.6';
+        }
+      });
+    }
+
+    /* ------------------------------
+       Sorting
+       ------------------------------ */
+    function sortedPlayers() {
+      // return array of player objects in UI display order
+      return players.slice().sort((a, b) => {
+        if (sortMode === 'score-desc') return (scores[b.name] || 0) - (scores[a.name] || 0);
+        if (sortMode === 'score-asc') return (scores[a.name] || 0) - (scores[b.name] || 0);
+        if (sortMode === 'name-asc') return a.name.localeCompare(b.name);
+        if (sortMode === 'name-desc') return b.name.localeCompare(a.name);
+        return 0;
+      });
+    }
+
+    /* ------------------------------
+       Submit points & Rounds
+       ------------------------------ */
+    function submitPoints() {
+      if (players.length === 0) return;
+
+      const keepInputs = document.getElementById('keepInputsCheck').checked;
+      keepInputsEnabled = keepInputs; // update global state
+      const preserved = {};
+      // capture current input values (if preserve requested) so render won't wipe them
+      if (keepInputs) {
+        players.forEach(pObj => {
+          const id = `points-${encodeId(pObj.name)}`;
+          const el = document.getElementById(id);
+          if (el) preserved[id] = el.value;
+        });
+      }
+
+      const roundPoints = [];
+      players.forEach(pObj => {
+        const el = document.getElementById(`points-${encodeId(pObj.name)}`);
+        let raw = '';
+        if (el) raw = el.value.trim();
+        const val = (raw === '' || isNaN(parseInt(raw))) ? 0 : parseInt(raw, 10);
+        roundPoints.push(val);
+      });
+
+      history.push({ points: roundPoints, timestamp: new Date().toISOString() });
+
+      // recompute scores from history (single source of truth)
+      computeScores();
+      updateAll();
+      saveState();
+
+      // restore preserved input values after re-render
+      if (keepInputs) {
+        Object.keys(preserved).forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = preserved[id];
+        });
+        showSubmitFeedback();
+      }
+      saveState(); // save the keepInputs preference
+    }
+
+    function showSubmitFeedback() {
+      const el = document.getElementById('submitFeedback');
+      if (!el) return;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 900);
+    }
+
+    /* ------------------------------
+       Update UI + Chart
+       ------------------------------ */
+    function updateTotals() {
+      // ensure scores are computed
+      computeScores();
+      players.forEach(p => {
+        const td = document.getElementById(`total-${encodeId(p.name)}`);
+        if (td) {
+          const valueEl = td.querySelector('.score-value');
+          if (valueEl) valueEl.textContent = scores[p.name] ?? 0;
+        }
+      });
+      updateScoreCircles();
+    }
+
+    function onXAxisModeChange() {
+      const isChecked = document.getElementById('xAxisModeToggle').checked;
+      xAxisMode = isChecked ? 'time' : 'round';
+      saveState();
+      updateChart();
+    }
+
+    function toggleGlobalTarget() {
+      const enabled = document.getElementById('globalTargetCheck').checked;
+      globalTargetEnabled = !!enabled;
+      document.getElementById('globalTargetInput').style.display = globalTargetEnabled ? 'inline-block' : 'none';
+      if (!globalTargetEnabled) globalTargetValue = null;
+      saveState();
+      // re-render player rows to show/hide individual targets
+      renderPlayerRows();
+      updateScoreCircles();
+      updateChart();
+    }
+
+    // Attach change event for the global target input
+    document.addEventListener('change', (e) => {
+      if (e.target && e.target.id === 'globalTargetInput') {
+        const raw = e.target.value.trim();
+        globalTargetValue = (raw === '' || isNaN(parseInt(raw))) ? null : parseInt(raw, 10);
+        saveState();
+        updateScoreCircles();
+        updateChart();
+      }
+    });
+
+    function updateChart() {
+      const ctx = document.getElementById('scoreChart').getContext('2d');
+      const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#f2f2f7';
+      const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--border') || '#303034';
+
+      // Ensure history always has at least Round 0
+      if (history.length === 0) {
+        history = [{ points: players.map(() => 0), timestamp: new Date().toISOString() }];
+      }
+
+      // Labels and x axis config depending on xAxisMode
+      let labels = [];
+      let xScale = {};
+      if (xAxisMode === 'time') {
+        labels = history.map(h => new Date(h.timestamp));
+        xScale = { type: 'time', time: { tooltipFormat: 'PPpp', unit: 'minute', displayFormats: { minute: 'HH:mm' } }, ticks: { color: textColor }, grid: { color: gridColor } };
+      } else {
+        labels = history.map((_, i) => `Round ${i}`);
+        xScale = { ticks: { color: textColor }, grid: { color: gridColor } };
+      }
+
+      // Calculate cumulative scores for chart data (players order)
+      const cumulativeHistory = [];
+      const currentTotals = players.map(() => 0);
+      history.forEach(round => {
+        round.points.forEach((p, i) => {
+          currentTotals[i] += Number(p) || 0;
+        });
+        cumulativeHistory.push([...currentTotals]);
+      });
+
+      const datasets = players.map((p, idx) => {
+        const color = COLORS[idx % COLORS.length];
+        const data = cumulativeHistory.map(snapshot => snapshot[idx] ?? 0);
+        return {
+          label: p.name,
+          data: data.map((v, i) => ({ x: xAxisMode === 'time' ? new Date(history[i].timestamp) : `Round ${i}`, y: v })),
+          borderColor: color,
+          backgroundColor: color + '33',
+          borderWidth: 2.5,
+          pointRadius: 4,
+          tension: 0.25
+        };
+      });
+
+      // Add global target dataset if enabled
+      if (globalTargetEnabled && (globalTargetValue !== null && globalTargetValue !== undefined)) {
+        const constData = labels.map((lbl, i) => ({ x: xAxisMode === 'time' ? new Date(history[i].timestamp) : `Round ${i}`, y: globalTargetValue }));
+        datasets.push({
+          label: 'Global Target',
+          data: constData,
+          borderColor: '#ffffff99',
+          borderWidth: 1.5,
+          borderDash: [6, 6],
+          pointRadius: 0,
+          fill: false
+        });
+      }
+
+      // Add individual target lines (dashed, lighter)
+      players.forEach((p, idx) => {
+        if (p.target !== undefined && p.target !== null) {
+          const constData = labels.map((lbl, i) => ({ x: xAxisMode === 'time' ? new Date(history[i].timestamp) : `Round ${i}`, y: p.target }));
+          const color = COLORS[idx % COLORS.length];
+          datasets.push({
+            label: `${p.name} target`,
+            data: constData,
+            borderColor: color + '99',
+            borderWidth: 1,
+            borderDash: [4, 4],
+            pointRadius: 0,
+            fill: false
+          });
+        }
+      });
+
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          // when using time x-axis, Chart expects data points with {x:Date, y:number}, labels can be left empty
+          labels: xAxisMode === 'time' ? undefined : labels,
+          datasets
+        },
+        options: {
+          maintainAspectRatio: false,
+          responsive: true,
+          plugins: {
+            legend: { labels: { color: textColor } }
+          },
+          scales: {
+            x: xScale,
+            y: {
+              ticks: { color: textColor },
+              grid: { color: gridColor },
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    function updateAll() {
+      renderPlayerRows();
+      updateTotals();
+      updateChart();
+    }
+
+    /* ------------------------------
+       Edit rounds modal
+       ------------------------------ */
+    function openEditRounds() {
+      // create modal content
+      const modalRoot = document.getElementById('modalContainer');
+      modalRoot.innerHTML = '';
+      modalRoot.style.display = 'block';
+
+      const backdrop = document.createElement('div');
+      backdrop.className = 'modal-backdrop';
+
+      const modal = document.createElement('div');
+      modal.className = 'modal';
+
+      // header + description
+      modal.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;">
+      <strong>Edit Previous Rounds</strong>
+      <div class="muted">Round 0..${Math.max(0, history.length - 1)}</div>
+    </div>
+    <div style="margin-top:8px; font-size:13px; color:var(--muted)">Change points for any round. Round 0 is the initial state (usually zeros).</div>`;
+
+      // top action buttons
+      const topActions = document.createElement('div');
+      topActions.style.display = 'flex';
+      topActions.style.gap = '8px';
+      topActions.style.justifyContent = 'flex-end';
+      topActions.style.marginTop = '10px';
+      topActions.style.marginBottom = '10px';
+      const topSaveBtn = document.createElement('button');
+      topSaveBtn.className = 'btn';
+      topSaveBtn.textContent = 'Save';
+      const topCancelBtn = document.createElement('button');
+      topCancelBtn.className = 'icon-btn';
+      topCancelBtn.textContent = 'Cancel';
+      topActions.appendChild(topCancelBtn);
+      topActions.appendChild(topSaveBtn);
+      modal.appendChild(topActions);
+
+      // table
+      const tbl = document.createElement('table');
+      // header row
+      let thead = '<tr><th>Round</th><th>Time</th>';
+      players.forEach(p => thead += `<th>${escapeHtml(p.name)}</th>`);
+      thead += '</tr>';
+      let rows = thead;
+
+      // ensure history includes round 0; pad missing lengths
+      if (history.length === 0) history = [{ points: players.map(() => 0), timestamp: new Date().toISOString() }];
+
+      // determine if all rounds are on the same day
+      const timestamps = history.map(h => new Date(h.timestamp));
+      const allSameDay = timestamps.every(t => {
+        const firstDate = timestamps[0];
+        return t.getFullYear() === firstDate.getFullYear() &&
+          t.getMonth() === firstDate.getMonth() &&
+          t.getDate() === firstDate.getDate();
+      });
+
+      history.forEach((round, ri) => {
+        const timestamp = new Date(round.timestamp);
+        let timeStr = '';
+        if (allSameDay) {
+          // show only time with seconds: HH:MM:SS
+          timeStr = timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        } else {
+          // show full date and time with seconds
+          timeStr = timestamp.toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        }
+        rows += `<tr><td>${ri}</td><td style="font-size:12px; color:var(--muted);">${timeStr}</td>`;
+        players.forEach((p, pi) => {
+          const v = round.points[pi] ?? 0;
+          rows += `<td><input class="round-input" data-round="${ri}" data-player="${pi}" value="${v}" inputmode="numeric" pattern="[0-9]*"></td>`;
+        });
+        rows += '</tr>';
+      });
+
+      tbl.innerHTML = rows;
+      modal.appendChild(tbl);
+
+      // actions at bottom
+      const actions = document.createElement('div');
+      actions.className = 'modal-actions';
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'btn'; saveBtn.textContent = 'Save';
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'icon-btn'; cancelBtn.textContent = 'Cancel';
+
+      actions.appendChild(cancelBtn);
+      actions.appendChild(saveBtn);
+      modal.appendChild(actions);
+
+      backdrop.appendChild(modal);
+      modalRoot.appendChild(backdrop);
+
+      // save function (shared between top and bottom buttons)
+      const performSave = () => {
+        // build new history from inputs (validate numbers)
+        const inputs = modal.querySelectorAll('.round-input');
+        const newHistory = history.map(h => ({ ...h, points: h.points.slice() })); // deep-ish copy
+        let ok = true;
+        inputs.forEach(inp => {
+          const r = parseInt(inp.dataset.round, 10);
+          const p = parseInt(inp.dataset.player, 10);
+          let v = inp.value.trim();
+          if (v === '' || isNaN(parseInt(v))) v = 0;
+          const nv = parseInt(v, 10);
+          if (!Number.isFinite(nv)) ok = false;
+          if (ok) {
+            if (!newHistory[r]) newHistory[r] = { points: players.map(() => 0), timestamp: new Date().toISOString() };
+            newHistory[r].points[p] = nv;
+          }
+        });
+
+        if (!ok) {
+          alert('Please enter valid numbers.');
+          return;
+        }
+
+        history = newHistory;
+
+        // recompute all scores from new history
+        computeScores();
+
+        if (history.length === 0) history = [{ points: players.map(() => 0), timestamp: new Date().toISOString() }];
+
+        updateAll();
+        saveState();
+
+        modalRoot.innerHTML = ''; modalRoot.style.display = 'none';
+      };
+
+      // close function (shared between top and bottom buttons)
+      const performClose = () => {
+        modalRoot.innerHTML = ''; modalRoot.style.display = 'none';
+      };
+
+      // event listeners for top buttons
+      topCancelBtn.addEventListener('click', performClose);
+      topSaveBtn.addEventListener('click', performSave);
+
+      // event listeners for bottom buttons
+      cancelBtn.addEventListener('click', performClose);
+      saveBtn.addEventListener('click', performSave);
+
+      // allow backdrop click to close
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+          performClose();
+        }
+      });
+    }
+
+    /* ------------------------------
+       New game & reset
+       ------------------------------ */
+    function confirmNewGame() {
+      const ok = confirm('Start a new game with the same players? This will reset totals and history but keep player names.');
+      if (!ok) return;
+      history = [{ points: players.map(() => 0), timestamp: new Date().toISOString() }];
+      computeScores();
+      updateAll();
+      saveState();
+    }
+
+    function confirmReset() {
+      const ok = confirm('Reset everything and return to player setup? This will clear players, scores and history.');
+      if (!ok) return;
+      localStorage.removeItem(STATE_KEY);
+      location.reload();
+    }
+
+    /* ------------------------------
+       Import / Export (game-level)
+       ------------------------------ */
+    function exportGame() {
+      const state = {
+        version: CONFIG_VERSION,
+        players,
+        history,
+        sortMode,
+        settings: { globalTargetEnabled, globalTargetValue, xAxisMode }
+      };
+      const jsonString = JSON.stringify(state, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `scorekeeper-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toggleActions(); // close menu
+    }
+
+    function importGame() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json,application/json';
+      input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          try {
+            const state = JSON.parse(event.target.result);
+            const data = state.data || state;
+            if (!data.players || !data.history) {
+              throw new Error("Invalid game file format.");
+            }
+
+            // Load data (apply safely)
+            applyImportedState(data);
+
+            // Save and reload UI
+            saveState();
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            updateAll();
+            alert('Game imported successfully!');
+
+          } catch (err) {
+            console.error("Import failed:", err);
+            alert(`Import failed: ${err.message}`);
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+      toggleActions(); // close menu
+    }
+
+
+    /* ------------------------------
+       Init
+       ------------------------------ */
+    function init() {
+      // load state if present
+      const had = loadState();
+      if (!had) {
+        addPlayerInput('');
+        addPlayerInput('');
+        applyTheme();
+        return;
+      }
+
+      applyTheme();
+
+      // if players exist, go to game view and ensure structures okay
+      if (players && players.length > 0) {
+        // ensure history has at least round 0 snapshot
+        if (!history || history.length === 0) {
+          history = [{ points: players.map(() => 0), timestamp: new Date().toISOString() }];
+        } else {
+          // Recalculate scores from history to ensure consistency
+          computeScores();
+        }
+
+        // update global target UI
+        // default to global target enabled (and show its input)
+        const gcb = document.getElementById('globalTargetCheck');
+        if (gcb) gcb.checked = !!globalTargetEnabled;
+        const gIn = document.getElementById('globalTargetInput');
+        if (gIn) {
+          gIn.value = (globalTargetValue !== null && globalTargetValue !== undefined) ? globalTargetValue : '';
+          gIn.style.display = globalTargetEnabled ? 'inline-block' : 'none';
+        }
+        document.getElementById('xAxisModeSelect').value = xAxisMode;
+        document.getElementById('keepInputsCheck').checked = !!keepInputsEnabled;
+        document.getElementById('xAxisModeToggle').checked = (xAxisMode === 'time');
+
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('game').style.display = 'block';
+        renderPlayerRows();
+        updateAll();
+      } else {
+        // no players saved: show setup with two blanks
+        addPlayerInput('');
+        addPlayerInput('');
+      }
+    }
+
+    window.addEventListener('load', init);
+
+    /* keyboard enter to add points */
+    document.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter' && document.getElementById('game').style.display === 'block') {
+        submitPoints();
+        e.preventDefault();
+      }
+    });
+
+    /* Actions menu event handlers - simplified */
+    function toggleActions(evt) {
+      if (evt) {
+        evt.preventDefault();
+        evt.stopPropagation();
+      }
+      const m = document.getElementById('actionsMenu');
+      if (m) m.style.display = m.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // close menu when clicking outside
+    document.addEventListener('mousedown', e => {
+      const menu = document.getElementById('actionsMenu');
+      const container = document.querySelector('.actions-container');
+      if (menu && container && menu.style.display === 'block') {
+        if (!container.contains(e.target)) {
+          menu.style.display = 'none';
+        }
+      }
+    }, true); // use capture phase for early event handling
+
+    // close menu when any menu button is clicked
+    document.addEventListener('click', e => {
+      if (e.target.closest('#actionsMenu button')) {
+        const menu = document.getElementById('actionsMenu');
+        if (menu) menu.style.display = 'none';
+      }
+    });
+  </script>
 </body>
+
 </html>
